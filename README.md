@@ -1,1 +1,1 @@
-# sol-wallet-service
+# sol-wallet
