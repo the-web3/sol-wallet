@@ -1,0 +1,1 @@
+package sol_wallet
