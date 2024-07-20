@@ -5,11 +5,11 @@ LDFLAGSSTRING +=-X main.GitCommit=$(GITCOMMIT)
 LDFLAGSSTRING +=-X main.GitDate=$(GITDATE)
 LDFLAGS := -ldflags "$(LDFLAGSSTRING)"
 
-eth-wallet:
-	env GO111MODULE=on go build -v $(LDFLAGS) ./cmd/eth-wallet
+sol-wallet:
+	env GO111MODULE=on go build -v $(LDFLAGS) ./cmd/sol-wallet
 
 clean:
-	rm eth-wallet
+	rm sol-wallet
 
 test:
 	go test -v ./...
@@ -18,7 +18,7 @@ lint:
 	golangci-lint run ./...
 
 .PHONY: \
-	eth-wallet \
+	sol-wallet \
 	bindings \
 	bindings-scc \
 	clean \

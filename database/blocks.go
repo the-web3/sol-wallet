@@ -7,7 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	common2 "github.com/the-web3/sol-wallet/database/utils"
 )
 
 type Blocks struct {
@@ -15,7 +14,6 @@ type Blocks struct {
 	ParentHash common.Hash `gorm:"serializer:bytes"`
 	Number     *big.Int    `gorm:"serializer:u256"`
 	Timestamp  uint64
-	RLPHeader  *common2.RLPHeader `gorm:"serializer:rlp;column:rlp_bytes"`
 }
 
 func BlockHeaderFromHeader(header *types.Header) Blocks {
@@ -24,7 +22,6 @@ func BlockHeaderFromHeader(header *types.Header) Blocks {
 		ParentHash: header.ParentHash,
 		Number:     header.Number,
 		Timestamp:  header.Time,
-		RLPHeader:  (*common2.RLPHeader)(header),
 	}
 }
 
@@ -47,7 +44,7 @@ func NewBlocksDB(db *gorm.DB) BlocksDB {
 }
 
 func (db *blocksDB) StoreBlockss(headers []Blocks, blockLength uint64) error {
-	result := db.gorm.CreateInBatches(&headers, common2.BatchInsertSize)
+	result := db.gorm.CreateInBatches(&headers, int(blockLength))
 	return result.Error
 }
 

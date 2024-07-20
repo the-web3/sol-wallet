@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	eth_wallet "github.com/the-web3/sol-wallet"
 	"github.com/urfave/cli/v2"
 
 	"github.com/ethereum/go-ethereum/log"
@@ -18,7 +19,13 @@ import (
 )
 
 func runSolWallet(ctx *cli.Context, shutdown context.CancelCauseFunc) (cliapp.Lifecycle, error) {
-	return nil, nil
+	log.Info("exec wallet sync")
+	cfg, err := config.LoadConfig(ctx)
+	if err != nil {
+		log.Error("failed to load config", "err", err)
+		return nil, err
+	}
+	return eth_wallet.NewSolWallet(ctx.Context, &cfg, shutdown)
 }
 
 func runRestApi(ctx *cli.Context, shutdown context.CancelCauseFunc) (cliapp.Lifecycle, error) {
