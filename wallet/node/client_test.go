@@ -18,7 +18,7 @@ func TestSolanaClient_GetLatestBlockHeight(t *testing.T) {
 
 func TestSolanaClient_GetBlock(t *testing.T) {
 	client := newTestClient()
-	result, _ := client.GetBlock(94101948)
+	result, _ := client.GetBlock(257859839)
 	fmt.Println("result======", result)
 }
 
@@ -26,21 +26,6 @@ func TestSolanaClient_GetBalance(t *testing.T) {
 	client := newTestClient()
 	balance, _ := client.GetBalance("8Lh2DVW5Lw3HgmZC55Fquno4K5auzSS7EveuLvEtCEXq")
 	fmt.Println("balance======", balance)
-}
-
-func TestSolanaClient_GetTxByHash(t *testing.T) {
-	client := newTestClient()
-	txMessage, _ := client.GetTxByHash("3ESWyuEuTTMjQaG6GKvd37F4ZNcfeK5WbsvWZEPWD5dtjyoy3kcdaDAkg1UCZatUNaiE9boaCMMufTMVhtyNdcif")
-	fmt.Println("", txMessage.From)
-	fmt.Println("", txMessage.To)
-	fmt.Println("", txMessage.Value)
-}
-
-func TestSolanaClient_RequestAirdrop(t *testing.T) {
-	client := newTestClient()
-	//client[0].RequestAirdrop("9rZPARQ11UsUcyPDhZ6b98ii4HWYV8wNwfxCBexG8YVX")
-	balance, _ := client.GetBalance("9rZPARQ11UsUcyPDhZ6b98ii4HWYV8wNwfxCBexG8YVX")
-	fmt.Println(balance)
 }
 
 func TestSolanaClient_GetNonce(t *testing.T) {
@@ -53,4 +38,10 @@ func TestSolanaClient_GetMinRent(t *testing.T) {
 	client := newTestClient()
 	minRent, _ := client.GetMinRent()
 	fmt.Println("minRent==", minRent)
+}
+
+func TestSolanaClient_GetTxByHash(t *testing.T) {
+	client := newTestClient()
+	tx := client.GetTxByHash("G6wz1rFZaGRbVUa9qPumYvmhNA3cxYXD8BCgZfztLfaJAAFP3rhQ74uEEza2wSSADBtiLHM5hoFD2jcAnaaYfiT")
+	fmt.Println("tx===", tx)
 }

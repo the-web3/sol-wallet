@@ -6,28 +6,25 @@ import (
 	"math/big"
 
 	"github.com/google/uuid"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type Transactions struct {
-	GUID             uuid.UUID      `gorm:"primaryKey" json:"guid"`
-	BlockHash        common.Hash    `gorm:"column:block_hash;serializer:bytes"  db:"block_hash" json:"block_hash"`
-	BlockNumber      *big.Int       `gorm:"serializer:u256;column:block_number" db:"block_number" json:"BlockNumber" form:"block_number"`
-	Hash             common.Hash    `gorm:"column:hash;serializer:bytes"  db:"hash" json:"hash"`
-	FromAddress      common.Address `json:"from_address" gorm:"serializer:bytes"`
-	ToAddress        common.Address `json:"to_address" gorm:"serializer:bytes"`
-	TokenAddress     common.Address `json:"token_address" gorm:"serializer:bytes"`
-	Fee              *big.Int       `gorm:"serializer:u256;column:fee" db:"fee" json:"Fee" form:"fee"`
-	Amount           *big.Int       `gorm:"serializer:u256;column:amount" db:"amount" json:"Amount" form:"amount"`
-	Status           uint8          `json:"status"`  // 0:交易确认中,1:钱包交易已到账；2:交易已通知业务层；3:交易完成
-	TxType           uint8          `json:"tx_type"` // 0:充值；1:提现；2:归集；3:热转冷；4:冷转热
-	TransactionIndex *big.Int       `gorm:"serializer:u256;column:transaction_index" db:"transaction_index" json:"TransactionIndex" form:"transaction_index"`
-	Timestamp        uint64
+	GUID         uuid.UUID `gorm:"primaryKey" json:"guid"`
+	BlockHash    string    `gorm:"column:block_hash;serializer:bytes"  db:"block_hash" json:"block_hash"`
+	BlockNumber  *big.Int  `gorm:"serializer:u256;column:block_number" db:"block_number" json:"BlockNumber" form:"block_number"`
+	Hash         string    `json:"hash"`
+	FromAddress  string    `json:"from_address"`
+	ToAddress    string    `json:"to_address"`
+	TokenAddress string    `json:"token_address"`
+	Fee          *big.Int  `gorm:"serializer:u256;column:fee" db:"fee" json:"Fee" form:"fee"`
+	Amount       *big.Int  `gorm:"serializer:u256;column:amount" db:"amount" json:"Amount" form:"amount"`
+	Status       uint8     `json:"status"`  // 0:交易确认中,1:钱包交易已到账；2:交易已通知业务层；3:交易完成
+	TxType       uint8     `json:"tx_type"` // 0:充值；1:提现；2:归集；3:热转冷；4:冷转热
+	Timestamp    uint64
 }
 
 type TransactionsView interface {
-	QueryTransactionByHash(hash common.Hash) (*Transactions, error)
+	QueryTransactionByHash(hash string) (*Transactions, error)
 }
 
 type TransactionsDB interface {
@@ -42,9 +39,9 @@ type transactionsDB struct {
 	gorm *gorm.DB
 }
 
-func (db *transactionsDB) QueryTransactionByHash(hash common.Hash) (*Transactions, error) {
+func (db *transactionsDB) QueryTransactionByHash(hash string) (*Transactions, error) {
 	var transactionEntry Transactions
-	result := db.gorm.Table("transactions").Where("hash", hash.String()).Take(&transactionEntry)
+	result := db.gorm.Table("transactions").Where("hash", hash).Take(&transactionEntry)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil

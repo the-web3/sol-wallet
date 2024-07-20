@@ -6,27 +6,24 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"math/big"
-	"strings"
 	"time"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type Balances struct {
-	GUID         uuid.UUID      `gorm:"primaryKey" json:"guid"`
-	Address      common.Address `json:"address" gorm:"serializer:bytes"`
-	TokenAddress common.Address `json:"token_address" gorm:"serializer:bytes"`
-	AddressType  uint8          `json:"address_type"` //0:用户地址；1:热钱包地址(归集地址)；2:冷钱包地址
-	Balance      *big.Int       `gorm:"serializer:u256;column:balance" db:"balance" json:"Balance" form:"balance"`
-	LockBalance  *big.Int       `gorm:"serializer:u256;column:lock_balance" db:"lock_balance" json:"LockBalance" form:"lock_balance"`
+	GUID         uuid.UUID `gorm:"primaryKey" json:"guid"`
+	Address      string    `json:"address"`
+	TokenAddress string    `json:"token_address"`
+	AddressType  uint8     `json:"address_type"` //0:用户地址；1:热钱包地址(归集地址)；2:冷钱包地址
+	Balance      *big.Int  `gorm:"serializer:u256;column:balance" db:"balance" json:"Balance" form:"balance"`
+	LockBalance  *big.Int  `gorm:"serializer:u256;column:lock_balance" db:"lock_balance" json:"LockBalance" form:"lock_balance"`
 	Timestamp    uint64
 }
 
 type BalancesView interface {
-	QueryWalletBalanceByTokenAndAddress(address, tokenAddress common.Address) (*Balances, error)
+	QueryWalletBalanceByTokenAndAddress(address, tokenAddress string) (*Balances, error)
 	UnCollectionList(amount *big.Int) ([]Balances, error)
 	QueryHotWalletBalances(amount *big.Int) ([]Balances, error)
-	QueryBalancesByToAddress(address *common.Address) (*Balances, error)
+	QueryBalancesByToAddress(address string) (*Balances, error)
 }
 
 type BalancesDB interface {
@@ -75,9 +72,9 @@ func (db *balancesDB) UpdateBalances(balanceList []Balances, isCollection bool) 
 	return nil
 }
 
-func (db *balancesDB) QueryBalancesByToAddress(address *common.Address) (*Balances, error) {
+func (db *balancesDB) QueryBalancesByToAddress(address string) (*Balances, error) {
 	var balanceEntry Balances
-	err := db.gorm.Table("balances").Where("address", strings.ToLower(address.String())).Take(&balanceEntry).Error
+	err := db.gorm.Table("balances").Where("address", address).Take(&balanceEntry).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -111,9 +108,9 @@ func (db *balancesDB) UnCollectionList(amount *big.Int) ([]Balances, error) {
 	return balanceList, nil
 }
 
-func (db *balancesDB) QueryWalletBalanceByTokenAndAddress(address, tokenAddress common.Address) (*Balances, error) {
+func (db *balancesDB) QueryWalletBalanceByTokenAndAddress(address, tokenAddress string) (*Balances, error) {
 	var balanceEntry Balances
-	err := db.gorm.Table("balances").Where("address = ? and token_address = ?", strings.ToLower(address.String()), strings.ToLower(tokenAddress.String())).Take(&balanceEntry).Error
+	err := db.gorm.Table("balances").Where("address = ? and token_address = ?", address, tokenAddress).Take(&balanceEntry).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -131,7 +128,7 @@ func (db *balancesDB) UpdateOrCreate(balanceList []TokenBalance) error {
 	}
 	for _, value := range balanceList {
 		var userBalanceEntry Balances
-		err := db.gorm.Table("balances").Where("address = ? and token_address = ? and address_type = ?", strings.ToLower(value.Address.String()), strings.ToLower(value.TokenAddress.String()), 0).Take(&userBalanceEntry).Error
+		err := db.gorm.Table("balances").Where("address = ? and token_address = ? and address_type = ?", value.Address, value.TokenAddress, 0).Take(&userBalanceEntry).Error
 		if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 			balanceValue := &Balances{
 				GUID:         uuid.New(),

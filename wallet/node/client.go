@@ -3,11 +3,10 @@ package node
 import (
 	"context"
 	"fmt"
-	"log"
 	"math/big"
 	"strconv"
 
-	"github.com/pkg/errors"
+	"github.com/ethereum/go-ethereum/log"
 
 	"github.com/blocto/solana-go-sdk/client"
 	"github.com/blocto/solana-go-sdk/rpc"
@@ -27,28 +26,17 @@ func NewSolanaClient(url string) (*SolanaClient, error) {
 	}, nil
 }
 
-func (sol *SolanaClient) GetLatestBlockHeight() (int64, error) {
+// GetLatestBlockHeight 获取最新的区块链
+func (sol *SolanaClient) GetLatestBlockHeight() (uint64, error) {
 	res, err := sol.RpcClient.GetBlockHeight(context.Background())
 	if err != nil {
 		return 0, err
 	}
-	return int64(res.Result), nil
+	return res.Result, nil
 }
 
-func (sol *SolanaClient) GetBlockInfo(startSlot uint64, endSlot uint64) (int64, error) {
-	if endSlot-startSlot >= 500000 {
-		return 0, errors.New("")
-	}
-	res, err := sol.RpcClient.GetBlocks(context.Background(), startSlot, endSlot)
-	if err != nil {
-		return 0, err
-	}
-
-	fmt.Println(res.Result)
-	return 0, nil
-}
-
-func (sol *SolanaClient) GetBlock(slot uint64) (int64, error) {
+// GetBlock 根据区块号获取里面的交易
+func (sol *SolanaClient) GetBlock(slot uint64) (*Transaction, error) {
 	rewards := false
 	var MaxSupportedTransactionVersion uint8 = 0
 	res, err := sol.RpcClient.GetBlockWithConfig(context.Background(), slot, rpc.GetBlockConfig{
@@ -58,10 +46,15 @@ func (sol *SolanaClient) GetBlock(slot uint64) (int64, error) {
 		MaxSupportedTransactionVersion: &MaxSupportedTransactionVersion,
 	})
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	fmt.Println(res.Result)
-	return 0, nil
+	if res.Result.Transactions != nil {
+		fmt.Println(res.Result.Transactions[0].Transaction)
+		if convertedMap, ok := res.Result.Transactions[0].Transaction.(map[string]interface{}); ok {
+			fmt.Println("Converted map:", convertedMap["instructions"])
+		}
+	}
+	return nil, err
 }
 
 func (sol *SolanaClient) GetBalance(address string) (string, error) {
@@ -73,7 +66,6 @@ func (sol *SolanaClient) GetBalance(address string) (string, error) {
 		},
 	)
 	if err != nil {
-		log.Fatalf("failed to get balance with cfg, err: %v", err)
 		return "", err
 	}
 
@@ -87,7 +79,6 @@ func (sol *SolanaClient) GetBalance(address string) (string, error) {
 func (sol *SolanaClient) GetNonce(nonceAccount string) (string, error) {
 	nonce, err := sol.Client.GetNonceFromNonceAccount(context.Background(), nonceAccount)
 	if err != nil {
-		log.Fatalf("failed to get nonce account, err: %v", err)
 		return "", err
 	}
 	return nonce, nil
@@ -96,86 +87,26 @@ func (sol *SolanaClient) GetNonce(nonceAccount string) (string, error) {
 func (sol *SolanaClient) GetMinRent() (string, error) {
 	bal, err := sol.RpcClient.GetMinimumBalanceForRentExemption(context.Background(), 100)
 	if err != nil {
-		log.Fatalf("failed to get GetMinimumBalanceForRentExemption , err: %v", err)
 		return "", err
 	}
 	return strconv.FormatUint(bal.Result, 10), nil
 }
 
-func getPreTokenBalance(preTokenBalance []rpc.TransactionMetaTokenBalance, accountIndex uint64) *rpc.TransactionMetaTokenBalance {
-	for j := 0; j < len(preTokenBalance); j++ {
-		preToken := preTokenBalance[j]
-		if preToken.AccountIndex == accountIndex {
-			return &preTokenBalance[j]
-		}
-	}
-	return nil
-}
-
-func (sol *SolanaClient) GetTxByHash(hash string) (*TxMessage, error) {
-	// "getTransaction" is only available in solana-core v1.7 or newer.
-	// Please use getConfirmedTransaction for solana-core v1.6
-	out, err := sol.RpcClient.GetTransaction(
+// GetTxByHash "getTransaction" is only available in solana-core v1.7 or newer.
+// Please use getConfirmedTransaction for solana-core v1.6
+// 根据交易 Hash 获取交易记录的详情
+func (sol *SolanaClient) GetTxByHash(hash string) error {
+	var MaxSupportedTransactionVersion uint8 = 0
+	out, err := sol.RpcClient.GetTransactionWithConfig(
 		context.TODO(),
 		hash,
-	)
+		rpc.GetTransactionConfig{
+			Encoding:                       rpc.TransactionEncodingJsonParsed,
+			MaxSupportedTransactionVersion: &MaxSupportedTransactionVersion,
+		})
 	if err != nil {
-		log.Fatalf("failed to request airdrop, err: %v", err)
-		return nil, err
+		return err
 	}
-	message := out.Result.Transaction.(map[string]interface{})["message"]
-	accountKeys := message.((map[string]interface{}))["accountKeys"].([]interface{})
-	signatures := out.Result.Transaction.(map[string]interface{})["signatures"].([]interface{})
-	_hash := signatures[0]
-	if out.Result.Meta.Err != nil || len(out.Result.Meta.LogMessages) == 0 || _hash == "" {
-		log.Fatalf("not found tx, err: %v", err)
-		return nil, err
-	}
-
-	var txMessage []*TxMessage
-	for i := 0; i < len(accountKeys); i++ {
-		to := accountKeys[i].(string)
-		amount := out.Result.Meta.PostBalances[i] - out.Result.Meta.PreBalances[i]
-
-		if to != "" && amount > 0 {
-			txMessage = append(txMessage, &TxMessage{
-				Hash:   hash,
-				From:   "",
-				To:     to,
-				Fee:    strconv.FormatUint(out.Result.Meta.Fee, 10),
-				Status: true,
-				Value:  strconv.FormatInt(amount, 10),
-				Type:   1,
-				Height: strconv.FormatUint(out.Result.Slot, 10),
-			})
-		}
-	}
-
-	for i := 0; i < len(out.Result.Meta.PostTokenBalances); i++ {
-		postToken := out.Result.Meta.PostTokenBalances[i]
-		preTokenBalance := getPreTokenBalance(out.Result.Meta.PreTokenBalances, postToken.AccountIndex)
-		if preTokenBalance == nil {
-			continue
-		}
-		postAmount, _ := strconv.ParseFloat(postToken.UITokenAmount.Amount, 64)
-		preAmount, _ := strconv.ParseFloat(preTokenBalance.UITokenAmount.Amount, 64)
-		amount := postAmount - preAmount
-		if amount > 0 {
-			txMessage = append(txMessage, &TxMessage{
-				Hash:   hash,
-				From:   "",
-				To:     postToken.Owner,
-				Fee:    strconv.FormatUint(out.Result.Meta.Fee, 10),
-				Status: true,
-				Value:  strconv.FormatFloat(amount, 'E', -1, 10),
-				Type:   1,
-				Height: strconv.FormatUint(out.Result.Slot, 10),
-			})
-		}
-	}
-	if len(txMessage) > 0 {
-		return txMessage[0], nil
-	}
-	log.Fatalf("not found tx, err: %v", err)
-	return nil, err
+	log.Info("get tx by hash", "out", out)
+	return nil
 }
