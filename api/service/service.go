@@ -72,35 +72,13 @@ func (h HandlerSvc) SubmitWithdrawFromBusiness(params *models.SubmitDWParams) (*
 }
 
 func (h HandlerSvc) SubmitDWParams(fromAddress string, toAddress string, tokenAddress string, amount string) (*models.SubmitDWParams, error) {
-	fromAddr, err := h.v.ParseValidateAddress(fromAddress)
-	if err != nil {
-		log.Error("invalid address param", "address", fromAddr.String(), "err", err)
-		return nil, err
-	}
-
-	toAddr, err := h.v.ParseValidateAddress(toAddress)
-	if err != nil {
-		log.Error("invalid address param", "address", toAddr.String(), "err", err)
-		return nil, err
-	}
-
-	tokenAddr, err := h.v.ParseValidateAddress(tokenAddress)
-	if err != nil {
-		log.Error("invalid address param", "address", toAddr.String(), "err", err)
-		return nil, err
-	}
-
-	transferAmount, _ := new(big.Int).SetString(amount, 10)
-	if transferAmount.Cmp(big.NewInt(0)) < 0 {
-		log.Error("invalid amount param", "transferAmount", transferAmount.String(), "err", err)
-		return nil, err
-	}
-
+	var amountBig *big.Int
+	amountBig.SetString(amount, 10)
 	return &models.SubmitDWParams{
-		FromAddress:  fromAddr,
-		ToAddress:    toAddr,
-		TokenAddress: tokenAddr,
-		Amount:       transferAmount,
+		FromAddress:  fromAddress,
+		ToAddress:    toAddress,
+		TokenAddress: tokenAddress,
+		Amount:       amountBig,
 	}, nil
 }
 

@@ -1,15 +1,14 @@
 package models
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/the-web3/sol-wallet/database"
 	"math/big"
 )
 
 type SubmitDWParams struct {
-	FromAddress  common.Address
-	ToAddress    common.Address
-	TokenAddress common.Address
+	FromAddress  string
+	ToAddress    string
+	TokenAddress string
 	Amount       *big.Int
 }
 

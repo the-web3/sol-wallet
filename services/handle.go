@@ -24,7 +24,7 @@ func (s *RpcServer) SubmitWithdrawInfo(ctx context.Context, in *wallet.WithdrawR
 		}, nil
 	}
 	amountBig.SetString(in.Amount, 10)
-	err := s.db.Withdraws.SubmitWithdrawFromBusiness(common.HexToAddress(in.FromAddress), common.HexToAddress(in.ToAddress), common.HexToAddress(in.TokenAddress), amountBig)
+	err := s.db.Withdraws.SubmitWithdrawFromBusiness(in.FromAddress, in.ToAddress, in.TokenAddress, amountBig)
 	if err != nil {
 		log.Error("submit withdraw fail", "err", err)
 		return &wallet.WithdrawRep{
