@@ -6,8 +6,6 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/ethereum/go-ethereum/log"
-
 	"github.com/blocto/solana-go-sdk/client"
 	"github.com/blocto/solana-go-sdk/rpc"
 )
@@ -36,7 +34,7 @@ func (sol *SolanaClient) GetLatestBlockHeight() (uint64, error) {
 }
 
 // GetBlock 根据区块号获取里面的交易
-func (sol *SolanaClient) GetBlock(slot uint64) (*Transaction, error) {
+func (sol *SolanaClient) GetBlock(slot uint64) ([]TransactionDetail, error) {
 	rewards := false
 	var MaxSupportedTransactionVersion uint8 = 0
 	res, err := sol.RpcClient.GetBlockWithConfig(context.Background(), slot, rpc.GetBlockConfig{
@@ -48,13 +46,51 @@ func (sol *SolanaClient) GetBlock(slot uint64) (*Transaction, error) {
 	if err != nil {
 		return nil, err
 	}
+	var txDetailList []TransactionDetail
 	if res.Result.Transactions != nil {
-		fmt.Println(res.Result.Transactions[0].Transaction)
-		if convertedMap, ok := res.Result.Transactions[0].Transaction.(map[string]interface{}); ok {
-			fmt.Println("Converted map:", convertedMap["instructions"])
+		for _, value := range res.Result.Transactions {
+			if convertedMap, ok := value.Transaction.(map[string]interface{}); ok {
+				message := convertedMap["message"].(map[string]interface{})
+				instructions := message["instructions"].([]interface{})
+				for _, instruction := range instructions {
+					instructionItem := instruction.(map[string]interface{})
+					if instructionItem["program"] == "spl-token" || instructionItem["program"] == "system" { // token transfer
+						txType := instructionItem["parsed"].(map[string]interface{})["type"]
+						if txType != "transfer" {
+							continue
+						} else {
+							var fromAddres, toAddress string
+							amount := new(big.Int)
+							information := instructionItem["parsed"].(map[string]interface{})["info"].(map[string]interface{})
+							fromAddres = information["source"].(string)
+							toAddress = information["destination"].(string)
+							if instructionItem["program"] == "spl-token" {
+								amountStr := information["amount"].(string)
+								amount.SetString(amountStr, 10)
+							} else {
+								amountStr := fmt.Sprintf("%.0f", information["lamports"].(float64))
+								amount.SetString(amountStr, 10)
+							}
+							fee := value.Meta.Fee
+							signatures := convertedMap["signatures"].([]interface{})
+							txDetail := TransactionDetail{
+								TxHash:      signatures[0].(string),
+								Destination: toAddress,
+								Source:      fromAddres,
+								Lamports:    amount,
+								Type:        txType.(string),
+								Fee:         big.NewInt(int64(fee)),
+							}
+							txDetailList = append(txDetailList, txDetail)
+						}
+					} else {
+						continue
+					}
+				}
+			}
 		}
 	}
-	return nil, err
+	return txDetailList, err
 }
 
 func (sol *SolanaClient) GetBalance(address string) (string, error) {
@@ -90,23 +126,4 @@ func (sol *SolanaClient) GetMinRent() (string, error) {
 		return "", err
 	}
 	return strconv.FormatUint(bal.Result, 10), nil
-}
-
-// GetTxByHash "getTransaction" is only available in solana-core v1.7 or newer.
-// Please use getConfirmedTransaction for solana-core v1.6
-// 根据交易 Hash 获取交易记录的详情
-func (sol *SolanaClient) GetTxByHash(hash string) error {
-	var MaxSupportedTransactionVersion uint8 = 0
-	out, err := sol.RpcClient.GetTransactionWithConfig(
-		context.TODO(),
-		hash,
-		rpc.GetTransactionConfig{
-			Encoding:                       rpc.TransactionEncodingJsonParsed,
-			MaxSupportedTransactionVersion: &MaxSupportedTransactionVersion,
-		})
-	if err != nil {
-		return err
-	}
-	log.Info("get tx by hash", "out", out)
-	return nil
 }
