@@ -18,8 +18,10 @@ func TestSolanaClient_GetLatestBlockHeight(t *testing.T) {
 
 func TestSolanaClient_GetBlock(t *testing.T) {
 	client := newTestClient()
-	result, _ := client.GetBlock(257859839)
+	result, _ := client.GetBlock(258030759)
 	for _, v := range result {
+		fmt.Println("BlockHeight", v.BlockHeight)
+		fmt.Println("BlockHash", v.BlockHash)
 		fmt.Println("txHash", v.TxHash)
 		fmt.Println("Source======", v.Source)
 		fmt.Println("Destination======", v.Destination)
@@ -30,7 +32,7 @@ func TestSolanaClient_GetBlock(t *testing.T) {
 
 func TestSolanaClient_GetBalance(t *testing.T) {
 	client := newTestClient()
-	balance, _ := client.GetBalance("8Lh2DVW5Lw3HgmZC55Fquno4K5auzSS7EveuLvEtCEXq")
+	balance, _ := client.GetBalance("DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL")
 	fmt.Println("balance======", balance)
 }
 

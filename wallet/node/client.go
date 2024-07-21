@@ -24,6 +24,11 @@ func NewSolanaClient(url string) (*SolanaClient, error) {
 	}, nil
 }
 
+// getRecentBlockhash 获取最新的区块链
+func (sol *SolanaClient) GetRecentBlockHash() (string, error) {
+	return "", nil
+}
+
 // GetLatestBlockHeight 获取最新的区块链
 func (sol *SolanaClient) GetLatestBlockHeight() (uint64, error) {
 	res, err := sol.RpcClient.GetBlockHeight(context.Background())
@@ -73,13 +78,17 @@ func (sol *SolanaClient) GetBlock(slot uint64) ([]TransactionDetail, error) {
 							}
 							fee := value.Meta.Fee
 							signatures := convertedMap["signatures"].([]interface{})
+							blockHeight := res.Result.BlockHeight
 							txDetail := TransactionDetail{
-								TxHash:      signatures[0].(string),
-								Destination: toAddress,
-								Source:      fromAddres,
-								Lamports:    amount,
-								Type:        txType.(string),
-								Fee:         big.NewInt(int64(fee)),
+								PreviousBlockhash: res.Result.PreviousBlockhash,
+								BlockHash:         res.Result.Blockhash,
+								BlockHeight:       big.NewInt(*blockHeight),
+								TxHash:            signatures[0].(string),
+								Destination:       toAddress,
+								Source:            fromAddres,
+								Lamports:          amount,
+								Type:              txType.(string),
+								Fee:               big.NewInt(int64(fee)),
 							}
 							txDetailList = append(txDetailList, txDetail)
 						}
@@ -126,4 +135,12 @@ func (sol *SolanaClient) GetMinRent() (string, error) {
 		return "", err
 	}
 	return strconv.FormatUint(bal.Result, 10), nil
+}
+
+func (sol *SolanaClient) SendRawTransaction(rawTx string) (string, error) {
+	bal, err := sol.RpcClient.SendTransaction(context.Background(), rawTx)
+	if err != nil {
+		return "", err
+	}
+	return bal.Result, nil
 }

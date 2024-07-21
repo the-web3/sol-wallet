@@ -4,25 +4,13 @@ import (
 	"errors"
 	"gorm.io/gorm"
 	"math/big"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type Blocks struct {
-	Hash       common.Hash `gorm:"primaryKey;serializer:bytes"`
-	ParentHash common.Hash `gorm:"serializer:bytes"`
-	Number     *big.Int    `gorm:"serializer:u256"`
+	Hash       string   `gorm:"primaryKey"`
+	ParentHash string   `json:"parent_hash"`
+	Number     *big.Int `gorm:"serializer:u256"`
 	Timestamp  uint64
-}
-
-func BlockHeaderFromHeader(header *types.Header) Blocks {
-	return Blocks{
-		Hash:       header.Hash(),
-		ParentHash: header.ParentHash,
-		Number:     header.Number,
-		Timestamp:  header.Time,
-	}
 }
 
 type BlocksView interface {

@@ -8,21 +8,20 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )
 
 type Deposits struct {
-	GUID         uuid.UUID   `gorm:"primaryKey" json:"guid"`
-	BlockHash    common.Hash `gorm:"column:block_hash;serializer:bytes"  db:"block_hash" json:"block_hash"`
-	BlockNumber  *big.Int    `gorm:"serializer:u256;column:block_number" db:"block_number" json:"BlockNumber" form:"block_number"`
-	Hash         string      `json:"hash"`
-	FromAddress  string      `json:"from_address"`
-	ToAddress    string      `json:"to_address"`
-	TokenAddress string      `json:"token_address"`
-	Fee          *big.Int    `gorm:"serializer:u256;column:fee" db:"fee" json:"Fee" form:"fee"`
-	Amount       *big.Int    `gorm:"serializer:u256;column:amount" db:"amount" json:"Amount" form:"amount"`
-	Status       uint8       `json:"status"` //0:充值确认中,1:充值钱包层已到账；2:充值已通知业务层；3:充值完成
+	GUID         uuid.UUID `gorm:"primaryKey" json:"guid"`
+	BlockHash    string    `json:"block_hash" db:"block_hash"`
+	BlockNumber  *big.Int  `gorm:"serializer:u256;column:block_number" db:"block_number" json:"BlockNumber" form:"block_number"`
+	Hash         string    `json:"hash"`
+	FromAddress  string    `json:"from_address"`
+	ToAddress    string    `json:"to_address"`
+	TokenAddress string    `json:"token_address"`
+	Fee          *big.Int  `gorm:"serializer:u256;column:fee" db:"fee" json:"Fee" form:"fee"`
+	Amount       *big.Int  `gorm:"serializer:u256;column:amount" db:"amount" json:"Amount" form:"amount"`
+	Status       uint8     `json:"status"` //0:充值确认中,1:充值钱包层已到账；2:充值已通知业务层；3:充值完成
 	Timestamp    uint64
 }
 

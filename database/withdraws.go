@@ -9,22 +9,21 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 )
 
 type Withdraws struct {
-	GUID         uuid.UUID   `gorm:"primaryKey" json:"guid"`
-	BlockHash    common.Hash `gorm:"column:block_hash;serializer:bytes"  db:"block_hash" json:"block_hash"`
-	BlockNumber  *big.Int    `gorm:"serializer:u256;column:block_number" db:"block_number" json:"BlockNumber" form:"block_number"`
-	Hash         string      `json:"hash"`
-	FromAddress  string      `json:"from_address"`
-	ToAddress    string      `json:"to_address"`
-	TokenAddress string      `json:"token_address"`
-	Fee          *big.Int    `gorm:"serializer:u256;column:fee" db:"fee" json:"Fee" form:"fee"`
-	Amount       *big.Int    `gorm:"serializer:u256;column:amount" db:"amount" json:"Amount" form:"amount"`
-	Status       uint8       `json:"status"` // 0:提现未签名发送,1:提现已经发送到区块链网络；2:提现已上链；3:提现在钱包层已完成；4:提现已通知业务；5:提现成功
-	TxSignHex    string      `json:"tx_sign_hex" gorm:"column:tx_sign_hex"`
+	GUID         uuid.UUID `gorm:"primaryKey" json:"guid"`
+	BlockHash    string    `json:"block_hash" db:"block_hash"`
+	BlockNumber  *big.Int  `gorm:"serializer:u256;column:block_number" db:"block_number" json:"BlockNumber" form:"block_number"`
+	Hash         string    `json:"hash"`
+	FromAddress  string    `json:"from_address"`
+	ToAddress    string    `json:"to_address"`
+	TokenAddress string    `json:"token_address"`
+	Fee          *big.Int  `gorm:"serializer:u256;column:fee" db:"fee" json:"Fee" form:"fee"`
+	Amount       *big.Int  `gorm:"serializer:u256;column:amount" db:"amount" json:"Amount" form:"amount"`
+	Status       uint8     `json:"status"` // 0:提现未签名发送,1:提现已经发送到区块链网络；2:提现已上链；3:提现在钱包层已完成；4:提现已通知业务；5:提现成功
+	TxSignHex    string    `json:"tx_sign_hex" gorm:"column:tx_sign_hex"`
 	Timestamp    uint64
 }
 
@@ -92,7 +91,7 @@ func (db *withdrawsDB) QueryWithdrawsByHash(hash string) (*Withdraws, error) {
 func (db *withdrawsDB) SubmitWithdrawFromBusiness(fromAddress string, toAddress string, TokenAddress string, amount *big.Int) error {
 	withdrawS := Withdraws{
 		GUID:         uuid.New(),
-		BlockHash:    common.Hash{},
+		BlockHash:    "",
 		BlockNumber:  big.NewInt(1),
 		Hash:         "",
 		FromAddress:  fromAddress,

@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	eth_wallet "github.com/the-web3/sol-wallet"
+
 	"github.com/urfave/cli/v2"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 
+	eth_wallet "github.com/the-web3/sol-wallet"
 	"github.com/the-web3/sol-wallet/api"
 	"github.com/the-web3/sol-wallet/common/cliapp"
 	"github.com/the-web3/sol-wallet/common/opio"

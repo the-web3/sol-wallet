@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/log"
+
 	"github.com/the-web3/sol-wallet/common/tasks"
 	"github.com/the-web3/sol-wallet/config"
 	"github.com/the-web3/sol-wallet/database"
 	"github.com/the-web3/sol-wallet/wallet/node"
+	"github.com/the-web3/sol-wallet/wallet/retry"
 )
 
 type Withdraw struct {
@@ -50,7 +52,81 @@ func (w *Withdraw) Start() error {
 	tickerWithdrawsWorker := time.NewTicker(time.Second * 5)
 	w.tasks.Go(func() error {
 		for range tickerWithdrawsWorker.C {
-			log.Info("solana withdraw")
+
+			withdrawList, err := w.db.Withdraws.UnSendWithdrawsList()
+			if err != nil {
+				log.Error("get un send withdraw list fail", "err", err)
+				return err
+			}
+
+			returnWithdrawsList := make([]database.Withdraws, len(withdrawList))
+			index := 0
+			var balanceList []database.Balances
+			for _, withdraw := range withdrawList {
+				hotWallet, err := w.db.Addresses.QueryHotWalletInfo()
+				if err != nil {
+					log.Error("query hot wallet info err", "err", err)
+					return err
+				}
+
+				hotWalletTokenBalance, err := w.db.Balances.QueryWalletBalanceByTokenAndAddress(hotWallet.Address, withdraw.TokenAddress)
+				if hotWalletTokenBalance.Balance.Cmp(withdraw.Amount) < 0 {
+					log.Info("hot wallet balance is not enough", "tokenAddress", withdraw.TokenAddress)
+					continue
+				}
+
+				recentBlockhash, err := w.client.GetRecentBlockHash()
+				if err != nil {
+					log.Error("query nonce by address fail", "err", err)
+					return err
+				}
+
+				// todo: 调 solana 签名机返回签名
+				var rawTx string
+				fmt.Println("recentBlockhash==", recentBlockhash)
+
+				// 发送交易到区块链网络
+				txHash, err := w.client.SendRawTransaction(rawTx)
+				if err != nil {
+					log.Error("send raw transaction fail", "err", err)
+					return err
+				}
+
+				returnWithdrawsList[index].Hash = txHash
+				returnWithdrawsList[index].GUID = withdraw.GUID
+				balanceItem := database.Balances{
+					Address:      hotWallet.Address,
+					TokenAddress: withdraw.TokenAddress,
+					LockBalance:  withdraw.Amount,
+				}
+				balanceList = append(balanceList, balanceItem)
+				index++
+			}
+
+			retryStrategy := &retry.ExponentialStrategy{Min: 1000, Max: 20_000, MaxJitter: 250}
+			if _, err := retry.Do[interface{}](w.resourceCtx, 10, retryStrategy, func() (interface{}, error) {
+				if err := w.db.Transaction(func(tx *database.DB) error {
+					// 将转出去的热钱包余额锁定
+					err = w.db.Balances.UpdateBalances(balanceList, false)
+					if err != nil {
+						log.Error("mark withdraw send fail", "err", err)
+						return err
+					}
+
+					err = w.db.Withdraws.MarkWithdrawsToSend(returnWithdrawsList)
+					if err != nil {
+						log.Error("mark withdraw send fail", "err", err)
+						return err
+					}
+					return nil
+				}); err != nil {
+					log.Error("unable to persist batch", "err", err)
+					return nil, err
+				}
+				return nil, nil
+			}); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
