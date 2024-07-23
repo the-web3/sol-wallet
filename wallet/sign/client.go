@@ -7,7 +7,7 @@ import (
 	gresty "github.com/go-resty/resty/v2"
 )
 
-var errSolSignHTTPError = errors.New("Tezos chain http error")
+var errSolSignHTTPError = errors.New("solana chain http error")
 
 type SolSignClient interface {
 	GenerateAddress(uint64) (*AccountInfoRep, error)

@@ -73,7 +73,7 @@ func (d *Deposit) Start() error {
 				startSyncBlock = dbLastestBlock.Number
 			}
 
-			chainLatestBlock, err := d.client.GetLatestBlockHeight()
+			chainLatestBlock, err := d.client.GetCurrentSlot()
 			if err != nil {
 				log.Error("get latest block from solana chain fail", "err", err)
 				return err
@@ -159,6 +159,7 @@ func (d *Deposit) processTransactions(startSyncBlock, endSyncBlock *big.Int) ([]
 	var transactionList []database.Transactions
 	var otherTransactionList []database.Transactions
 	for index := startSyncBlock.Uint64(); index <= endSyncBlock.Uint64(); index++ {
+		log.Info("handle block success", "block", index)
 		txList, err := d.client.GetBlock(index)
 		if err != nil {
 			log.Error("get block info faill", err)
@@ -167,6 +168,8 @@ func (d *Deposit) processTransactions(startSyncBlock, endSyncBlock *big.Int) ([]
 		if txList == nil {
 			continue
 		}
+		log.Info("Block in transaction", " txList[0].BlockHeight", txList[0].BlockHeight)
+
 		blockItem := database.Blocks{
 			Hash:       txList[0].BlockHash,
 			ParentHash: txList[0].PreviousBlockhash,

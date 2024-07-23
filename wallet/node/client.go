@@ -24,9 +24,18 @@ func NewSolanaClient(url string) (*SolanaClient, error) {
 	}, nil
 }
 
-// getRecentBlockhash 获取最新的区块链
+// GetRecentBlockHash 获取最新的区块链
 func (sol *SolanaClient) GetRecentBlockHash() (string, error) {
 	return "", nil
+}
+
+// GetCurrentSlot 获取最新的区块链
+func (sol *SolanaClient) GetCurrentSlot() (uint64, error) {
+	res, err := sol.RpcClient.GetSlot(context.Background())
+	if err != nil {
+		return 0, err
+	}
+	return res.Result, nil
 }
 
 // GetLatestBlockHeight 获取最新的区块链

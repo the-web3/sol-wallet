@@ -10,6 +10,7 @@ import (
 	"github.com/the-web3/sol-wallet/database"
 	"github.com/the-web3/sol-wallet/wallet"
 	"github.com/the-web3/sol-wallet/wallet/node"
+	"github.com/the-web3/sol-wallet/wallet/sign"
 )
 
 type SolWallet struct {
@@ -33,9 +34,27 @@ func NewSolWallet(ctx context.Context, cfg *config.Config, shutdown context.Canc
 		return nil, err
 	}
 
-	deposit, _ := wallet.NewDeposit(cfg, db, *solClient, shutdown)
-	withdraw, _ := wallet.NewWithdraw(cfg, db, *solClient, shutdown)
-	collectionCold, _ := wallet.NewCollectionCold(cfg, db, *solClient, shutdown)
+	signCli, err := sign.NewSolSignClient(cfg.SignServerProvider)
+	if err != nil {
+		log.Error("new sign client fail", "err", err)
+		return nil, err
+	}
+
+	deposit, err := wallet.NewDeposit(cfg, db, *solClient, shutdown)
+	if err != nil {
+		log.Error("new deposit fail", "err", err)
+		return nil, err
+	}
+	withdraw, err := wallet.NewWithdraw(cfg, db, *solClient, signCli, shutdown)
+	if err != nil {
+		log.Error("new withdraw fail", "err", err)
+		return nil, err
+	}
+	collectionCold, err := wallet.NewCollectionCold(cfg, db, *solClient, signCli, shutdown)
+	if err != nil {
+		log.Error("new collection and to cold fail", "err", err)
+		return nil, err
+	}
 
 	out := &SolWallet{
 		deposit:        deposit,

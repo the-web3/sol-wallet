@@ -17,6 +17,7 @@ import (
 	"github.com/the-web3/sol-wallet/database"
 	flags2 "github.com/the-web3/sol-wallet/flags"
 	"github.com/the-web3/sol-wallet/services"
+	"github.com/the-web3/sol-wallet/tools"
 )
 
 func runSolWallet(ctx *cli.Context, shutdown context.CancelCauseFunc) (cliapp.Lifecycle, error) {
@@ -59,7 +60,17 @@ func runRpc(ctx *cli.Context, shutdown context.CancelCauseFunc) (cliapp.Lifecycl
 }
 
 func runGenerateAddress(ctx *cli.Context) error {
-	return nil
+	cfg, err := config.LoadConfig(ctx)
+	if err != nil {
+		log.Error("failed to load config", "err", err)
+		return err
+	}
+	db, err := database.NewDB(ctx.Context, cfg.MasterDB)
+	if err != nil {
+		log.Error("failed to connect to database", "err", err)
+		return err
+	}
+	return tools.CreateAddressTools(ctx, &cfg, db)
 }
 
 func runMigrations(ctx *cli.Context) error {

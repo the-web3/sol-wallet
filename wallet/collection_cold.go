@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/the-web3/sol-wallet/wallet/sign"
 	"math/big"
 	"time"
 
@@ -26,17 +27,19 @@ type CollectionCold struct {
 	db             *database.DB
 	chainConf      *config.ChainConfig
 	client         node.SolanaClient
+	signClient     *sign.Client
 	resourceCtx    context.Context
 	resourceCancel context.CancelFunc
 	tasks          tasks.Group
 }
 
-func NewCollectionCold(cfg *config.Config, db *database.DB, client node.SolanaClient, shutdown context.CancelCauseFunc) (*CollectionCold, error) {
+func NewCollectionCold(cfg *config.Config, db *database.DB, client node.SolanaClient, signCli *sign.Client, shutdown context.CancelCauseFunc) (*CollectionCold, error) {
 	resCtx, resCancel := context.WithCancel(context.Background())
 	return &CollectionCold{
 		db:             db,
 		chainConf:      &cfg.Chain,
 		client:         client,
+		signClient:     signCli,
 		resourceCtx:    resCtx,
 		resourceCancel: resCancel,
 		tasks: tasks.Group{HandleCrit: func(err error) {
@@ -112,11 +115,29 @@ func (cc *CollectionCold) ToCold() error {
 		}
 
 		//  sendRawTx
-		var rawTx string
-		log.Info("Offline sign tx success", "rawTx", rawTx)
-		fmt.Println("sign params", hotAccount.Address, recentBlockhash)
+		txReq := &sign.TransactionReq{
+			FromAddress:  hotAccount.Address,
+			ToAddress:    coldWalletInfo.Address,
+			Amount:       value.Balance.String(),
+			NonceAccount: hotAccount.Address,
+			Nonce:        recentBlockhash,
+			Decimal:      9,
+			PrivateKey:   hotAccount.PrivateKey,
+			MintAddress:  value.TokenAddress,
+		}
 
-		txHash, err := cc.client.SendRawTransaction(rawTx)
+		txRep, err := cc.signClient.SignTransaction(txReq)
+		if err != nil {
+			log.Error("sign transaction fail", "err", err)
+			return err
+		}
+
+		if txRep.Code != 2000 {
+			log.Error("sign server occur unknown error")
+			continue
+		}
+
+		txHash, err := cc.client.SendRawTransaction(txRep.RawTx)
 		if err != nil {
 			log.Error("send raw transaction fail", "err", err)
 			return err
@@ -197,10 +218,29 @@ func (cc *CollectionCold) Collection() error {
 		}
 
 		//  sendRawTx
-		var rawTx string
-		log.Info("Offline sign tx success", "rawTx", rawTx, "fromAddress", accountInfo.Address, "balance", uncollect.Balance, "amount", uncollect.Balance, "recentBlockHash", recentBlockHash)
+		txReq := &sign.TransactionReq{
+			FromAddress:  uncollect.Address,
+			ToAddress:    hotWalletInfo.Address,
+			Amount:       uncollect.Balance.String(),
+			NonceAccount: uncollect.Address,
+			Nonce:        recentBlockHash,
+			Decimal:      9,
+			PrivateKey:   accountInfo.PrivateKey,
+			MintAddress:  uncollect.TokenAddress,
+		}
 
-		txHash, err := cc.client.SendRawTransaction(rawTx)
+		txRep, err := cc.signClient.SignTransaction(txReq)
+		if err != nil {
+			log.Error("sign transaction fail", "err", err)
+			return err
+		}
+
+		if txRep.Code != 2000 {
+			log.Error("sign server occur unknown error")
+			continue
+		}
+
+		txHash, err := cc.client.SendRawTransaction(txRep.RawTx)
 		if err != nil {
 			log.Error("send raw transaction fail", "err", err)
 			return err

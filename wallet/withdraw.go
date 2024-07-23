@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/the-web3/sol-wallet/wallet/sign"
 	"time"
 
 	"github.com/ethereum/go-ethereum/log"
@@ -19,17 +20,19 @@ type Withdraw struct {
 	db             *database.DB
 	chainConf      *config.ChainConfig
 	client         node.SolanaClient
+	signClient     *sign.Client
 	resourceCtx    context.Context
 	resourceCancel context.CancelFunc
 	tasks          tasks.Group
 }
 
-func NewWithdraw(cfg *config.Config, db *database.DB, client node.SolanaClient, shutdown context.CancelCauseFunc) (*Withdraw, error) {
+func NewWithdraw(cfg *config.Config, db *database.DB, client node.SolanaClient, signCli *sign.Client, shutdown context.CancelCauseFunc) (*Withdraw, error) {
 	resCtx, resCancel := context.WithCancel(context.Background())
 	return &Withdraw{
 		db:             db,
 		chainConf:      &cfg.Chain,
 		client:         client,
+		signClient:     signCli,
 		resourceCtx:    resCtx,
 		resourceCancel: resCancel,
 		tasks: tasks.Group{HandleCrit: func(err error) {
@@ -81,28 +84,43 @@ func (w *Withdraw) Start() error {
 					return err
 				}
 
-				// todo: 调 solana 签名机返回签名
-				var rawTx string
-				fmt.Println("recentBlockhash==", recentBlockhash)
+				txReq := &sign.TransactionReq{
+					FromAddress:  hotWalletTokenBalance.Address,
+					ToAddress:    withdraw.ToAddress,
+					Amount:       withdraw.Amount.String(),
+					NonceAccount: hotWalletTokenBalance.Address,
+					Nonce:        recentBlockhash,
+					Decimal:      9,
+					PrivateKey:   hotWallet.PrivateKey,
+					MintAddress:  withdraw.TokenAddress,
+				}
 
-				// 发送交易到区块链网络
-				txHash, err := w.client.SendRawTransaction(rawTx)
+				txRep, err := w.signClient.SignTransaction(txReq)
 				if err != nil {
-					log.Error("send raw transaction fail", "err", err)
+					log.Error("sign transaction fail", "err", err)
 					return err
 				}
-
-				returnWithdrawsList[index].Hash = txHash
-				returnWithdrawsList[index].GUID = withdraw.GUID
-				balanceItem := database.Balances{
-					Address:      hotWallet.Address,
-					TokenAddress: withdraw.TokenAddress,
-					LockBalance:  withdraw.Amount,
+				if txRep.Code == 2000 {
+					// 发送交易到区块链网络
+					txHash, err := w.client.SendRawTransaction(txRep.RawTx)
+					if err != nil {
+						log.Error("send raw transaction fail", "err", err)
+						return err
+					}
+					returnWithdrawsList[index].Hash = txHash
+					returnWithdrawsList[index].GUID = withdraw.GUID
+					balanceItem := database.Balances{
+						Address:      hotWallet.Address,
+						TokenAddress: withdraw.TokenAddress,
+						LockBalance:  withdraw.Amount,
+					}
+					balanceList = append(balanceList, balanceItem)
+					index++
+				} else {
+					log.Error("sign service occur unknown err")
+					continue
 				}
-				balanceList = append(balanceList, balanceItem)
-				index++
 			}
-
 			retryStrategy := &retry.ExponentialStrategy{Min: 1000, Max: 20_000, MaxJitter: 250}
 			if _, err := retry.Do[interface{}](w.resourceCtx, 10, retryStrategy, func() (interface{}, error) {
 				if err := w.db.Transaction(func(tx *database.DB) error {

@@ -162,6 +162,12 @@ var (
 		EnvVars:  prefixEnvVars("MASTER_DB_NAME"),
 		Required: true,
 	}
+	SignServerProviderFlag = &cli.StringFlag{
+		Name:     "sign-server-provider",
+		Usage:    "The provider of sign services",
+		EnvVars:  prefixEnvVars("SIGN_SERVER_PROVIDER"),
+		Required: true,
+	}
 
 	// Slave DB  flags
 	SlaveDbHostFlag = &cli.StringFlag{

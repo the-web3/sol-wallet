@@ -19,16 +19,17 @@ const (
 )
 
 type Config struct {
-	Migrations     string
-	Chain          ChainConfig
-	MasterDB       DBConfig
-	SlaveDB        DBConfig
-	SlaveDbEnable  bool
-	ApiCacheEnable bool
-	CacheConfig    CacheConfig
-	RpcServer      ServerConfig
-	HTTPServer     ServerConfig
-	MetricsServer  ServerConfig
+	Migrations         string
+	Chain              ChainConfig
+	MasterDB           DBConfig
+	SlaveDB            DBConfig
+	SlaveDbEnable      bool
+	ApiCacheEnable     bool
+	CacheConfig        CacheConfig
+	RpcServer          ServerConfig
+	HTTPServer         ServerConfig
+	MetricsServer      ServerConfig
+	SignServerProvider string
 }
 
 type ChainConfig struct {
@@ -143,5 +144,6 @@ func NewConfig(ctx *cli.Context) Config {
 			Host: ctx.String(flags.MetricsHostFlag.Name),
 			Port: ctx.Int(flags.MetricsPortFlag.Name),
 		},
+		SignServerProvider: ctx.String(flags.SignServerProviderFlag.Name),
 	}
 }

@@ -32,13 +32,13 @@ func TestClient_PrepareAccount(t *testing.T) {
 	}
 	var keyAddressList []KeyAddress
 	keyAddressOne := KeyAddress{
-		Key:     "privateKey",
+		Key:     "d69df4d566d4797b9623c92ccb564c660cf6ab2ab6fbfc1181cf3315e50812b2ddc778616699176f05ab8dc90dc640ae41fbee549178b869974d4a7deaa52745",
 		Address: "FvjWo4jbdsAP4ZHtJfiUpv5xb6TpBWRtDASGPmKKR39E",
 	}
 	keyAddressList = append(keyAddressList, keyAddressOne)
 
 	keyAddressTwo := KeyAddress{
-		Key:     "privateKey",
+		Key:     "55a70321542da0b6123f37180e61993d5769f0a5d727f9c817151c1270c290963a7b3874ba467be6b81ea361e3d7453af8b81c88aedd24b5031fdda0bc71ad32",
 		Address: "4wHd9tf4x4FkQ3JtgsMKyiEofEHSaZH5rYzfFKLvtESD",
 	}
 	keyAddressList = append(keyAddressList, keyAddressTwo)
@@ -70,7 +70,7 @@ func TestClient_SignTransaction(t *testing.T) {
 		NonceAccount: "FvjWo4jbdsAP4ZHtJfiUpv5xb6TpBWRtDASGPmKKR39E",
 		Nonce:        "GGLM3xu9yXzDoH3uhMEPcqqju6BB6C1FzoWKdiji5x5t",
 		Decimal:      9,
-		PrivateKey:   "privateKey",
+		PrivateKey:   "55a70321542da0b6123f37180e61993d5769f0a5d727f9c817151c1270c290963a7b3874ba467be6b81ea361e3d7453af8b81c88aedd24b5031fdda0bc71ad32",
 		MintAddress:  "",
 	}
 	signRet, err := client.SignTransaction(signParam)

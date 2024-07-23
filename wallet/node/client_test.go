@@ -10,6 +10,12 @@ func newTestClient() *SolanaClient {
 	return client
 }
 
+func TestSolanaClient_GetCurrentSlot(t *testing.T) {
+	client := newTestClient()
+	result, _ := client.GetCurrentSlot()
+	fmt.Println("result======", result)
+}
+
 func TestSolanaClient_GetLatestBlockHeight(t *testing.T) {
 	client := newTestClient()
 	result, _ := client.GetLatestBlockHeight()
