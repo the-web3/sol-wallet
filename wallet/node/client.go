@@ -87,11 +87,11 @@ func (sol *SolanaClient) GetBlock(slot uint64) ([]TransactionDetail, error) {
 							}
 							fee := value.Meta.Fee
 							signatures := convertedMap["signatures"].([]interface{})
-							blockHeight := res.Result.BlockHeight
+							blockHeight := res.Result.ParentSlot + 1
 							txDetail := TransactionDetail{
 								PreviousBlockhash: res.Result.PreviousBlockhash,
 								BlockHash:         res.Result.Blockhash,
-								BlockHeight:       big.NewInt(*blockHeight),
+								BlockHeight:       big.NewInt(int64(blockHeight)),
 								TxHash:            signatures[0].(string),
 								Destination:       toAddress,
 								Source:            fromAddres,

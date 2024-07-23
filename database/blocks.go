@@ -4,12 +4,15 @@ import (
 	"errors"
 	"gorm.io/gorm"
 	"math/big"
+
+	"github.com/google/uuid"
 )
 
 type Blocks struct {
-	Hash       string   `gorm:"primaryKey"`
-	ParentHash string   `json:"parent_hash"`
-	Number     *big.Int `gorm:"serializer:u256"`
+	GUID       uuid.UUID `gorm:"primaryKey" json:"guid"`
+	Hash       string    `gorm:"primaryKey"`
+	ParentHash string    `json:"parent_hash"`
+	Number     *big.Int  `gorm:"serializer:u256"`
 	Timestamp  uint64
 }
 

@@ -2,7 +2,6 @@ package tools
 
 import (
 	"context"
-	"github.com/the-web3/sol-wallet/wallet/retry"
 	"math/big"
 
 	"github.com/urfave/cli/v2"
@@ -13,12 +12,14 @@ import (
 
 	"github.com/the-web3/sol-wallet/config"
 	"github.com/the-web3/sol-wallet/database"
+	"github.com/the-web3/sol-wallet/wallet/retry"
 	"github.com/the-web3/sol-wallet/wallet/sign"
 )
 
 const GenerateAddressNum = 100
 
 func CreateAddressTools(ctx *cli.Context, cfg *config.Config, db *database.DB) error {
+	log.Info("start tools", "cfg.SignServerProvider", cfg.SignServerProvider)
 	client, err := sign.NewSolSignClient(cfg.SignServerProvider)
 	if err != nil {
 		log.Error("New sol sign client fail", "err", err)
@@ -30,7 +31,7 @@ func CreateAddressTools(ctx *cli.Context, cfg *config.Config, db *database.DB) e
 		log.Error("generate address fail", "err", err)
 	}
 
-	if accountInfo.Code != 2000 {
+	if accountInfo != nil && accountInfo.Code != 2000 {
 		log.Error("return code err", "code", accountInfo.Code)
 		return err
 	}

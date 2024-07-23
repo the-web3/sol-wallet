@@ -163,10 +163,10 @@ var (
 		Required: true,
 	}
 	SignServerProviderFlag = &cli.StringFlag{
-		Name:     "sign-server-provider",
-		Usage:    "The provider of sign services",
-		EnvVars:  prefixEnvVars("SIGN_SERVER_PROVIDER"),
-		Required: true,
+		Name:    "sign-server-provider",
+		Usage:   "The provider of sign services",
+		EnvVars: prefixEnvVars("SIGN_SERVER_PROVIDER"),
+		Value:   "http://127.0.0.1:3000",
 	}
 
 	// Slave DB  flags
@@ -244,6 +244,7 @@ var requireFlags = []cli.Flag{
 	MasterDbUserFlag,
 	MasterDbPasswordFlag,
 	MasterDbNameFlag,
+	SignServerProviderFlag,
 }
 
 var optionalFlags = []cli.Flag{

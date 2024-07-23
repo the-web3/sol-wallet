@@ -12,9 +12,10 @@ END $$;
 
 
 CREATE TABLE IF NOT EXISTS blocks (
-    hash  VARCHAR PRIMARY KEY,
-    parent_hash VARCHAR  NOT NULL UNIQUE,
-    number UINT256 NOT NULL UNIQUE CHECK(number>0),
+    guid VARCHAR PRIMARY KEY,
+    hash VARCHAR NOT NULL,
+    parent_hash VARCHAR NOT NULL,
+    number UINT256 NOT NULL CHECK(number>0),
     timestamp INTEGER NOT NULL CHECK(timestamp>0)
 );
 CREATE INDEX IF NOT EXISTS blocks_number ON blocks(number);

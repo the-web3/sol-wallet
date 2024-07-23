@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/the-web3/sol-wallet/wallet/sign"
 	"time"
 
 	"github.com/ethereum/go-ethereum/log"
@@ -14,6 +13,7 @@ import (
 	"github.com/the-web3/sol-wallet/database"
 	"github.com/the-web3/sol-wallet/wallet/node"
 	"github.com/the-web3/sol-wallet/wallet/retry"
+	"github.com/the-web3/sol-wallet/wallet/sign"
 )
 
 type Withdraw struct {

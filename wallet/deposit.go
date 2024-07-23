@@ -158,7 +158,7 @@ func (d *Deposit) processTransactions(startSyncBlock, endSyncBlock *big.Int) ([]
 	var withdrawList []database.Withdraws
 	var transactionList []database.Transactions
 	var otherTransactionList []database.Transactions
-	for index := startSyncBlock.Uint64(); index <= endSyncBlock.Uint64(); index++ {
+	for index := startSyncBlock.Uint64(); index < endSyncBlock.Uint64(); index++ {
 		log.Info("handle block success", "block", index)
 		txList, err := d.client.GetBlock(index)
 		if err != nil {
@@ -171,6 +171,7 @@ func (d *Deposit) processTransactions(startSyncBlock, endSyncBlock *big.Int) ([]
 		log.Info("Block in transaction", " txList[0].BlockHeight", txList[0].BlockHeight)
 
 		blockItem := database.Blocks{
+			GUID:       uuid.New(),
 			Hash:       txList[0].BlockHash,
 			ParentHash: txList[0].PreviousBlockhash,
 			Number:     txList[0].BlockHeight,
