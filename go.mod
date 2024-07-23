@@ -6,6 +6,7 @@ require (
 	github.com/blocto/solana-go-sdk v1.30.0
 	github.com/ethereum/go-ethereum v1.14.7
 	github.com/go-chi/chi/v5 v5.1.0
+	github.com/go-resty/resty/v2 v2.13.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgtype v1.14.3
 	github.com/pkg/errors v0.9.1
